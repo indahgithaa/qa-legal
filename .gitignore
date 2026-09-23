@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments and secrets
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Editors and notebooks
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# Logs and local OS files
+*.log
+logs/
+.DS_Store
+Thumbs.db
+
+# Raw/derived datasets (keep directory placeholders)
+data/raw/**/*
+!data/raw/**/
+!data/raw/**/.gitkeep
+data/extracted/**/*
+!data/extracted/.gitkeep
+data/processed/**/*
+!data/processed/.gitkeep
+data/chunks/**/*
+!data/chunks/**/
+!data/chunks/**/.gitkeep
+data/evaluation/**/*
+!data/evaluation/.gitkeep
+
+# Vector indexes can be large
+vector_db/**/*
+!vector_db/**/
+!vector_db/**/.gitkeep
+
+# Experiment outputs
+experiments/results/**/*
+!experiments/results/.gitkeep
+

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "court-decision-rag"
+version = "0.1.0"
+description = "Research pipeline for structure-aware chunking of Indonesian court decisions"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "PyMuPDF>=1.24,<2.0",
+  "PyYAML>=6.0,<7.0",
+]
+
+[project.scripts]
+court-rag-extract = "src.cli:extract_main"
+court-rag-preprocess = "src.cli:preprocess_main"
+court-rag-chunk = "src.cli:chunk_main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+

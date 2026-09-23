@@ -1,0 +1,26 @@
+project:
+  seed: 42
+
+paths:
+  raw_pdf_dir: data/raw/court_decisions
+  extracted_pages: data/extracted/pages.jsonl
+  processed_pages: data/processed/pages.jsonl
+  detected_sections: data/processed/sections.jsonl
+
+extraction:
+  recursive: true
+
+preprocessing:
+  normalize_unicode: true
+  dehyphenate_line_breaks: true
+  collapse_whitespace: true
+
+structure_detection:
+  fallback_label: unknown
+
+chunking:
+  strategy: fixed_size
+  max_words: 300
+  overlap_words: 50
+  output_path: data/chunks/fixed_size/chunks.jsonl
+

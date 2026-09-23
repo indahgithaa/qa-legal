@@ -1,0 +1,8 @@
+extends: default.yaml
+
+chunking:
+  strategy: fixed_size
+  max_words: 300
+  overlap_words: 50
+  output_path: data/chunks/fixed_size/chunks.jsonl
+
