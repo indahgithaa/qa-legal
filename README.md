@@ -1,93 +1,213 @@
-# Court Decision RAG: Structure-Aware Chunking
+# Structure-Aware Chunking untuk RAG Dokumen Putusan Pengadilan
 
-Fondasi penelitian skripsi untuk membandingkan **fixed-size chunking** dan
-**structure-aware chunking** pada question answering dokumen putusan pengadilan
-Indonesia. Milestone pertama repository ini sengaja dibatasi pada pipeline:
+Repository ini berisi implementasi penelitian tentang pengaruh strategi
+*chunking* terhadap kinerja retrieval pada dokumen putusan pengadilan Indonesia.
+Fokus utamanya adalah membandingkan dua pendekatan:
+
+1. **Fixed-size chunking** sebagai baseline.
+2. **Structure-aware chunking** yang memanfaatkan bagian-bagian dalam putusan,
+   seperti identitas terdakwa, fakta, pertimbangan hukum, dan amar putusan.
+
+Penelitian ini dilatarbelakangi oleh bentuk putusan pengadilan yang panjang dan
+memiliki susunan tertentu. Pemotongan teks hanya berdasarkan ukuran berisiko
+memisahkan informasi yang seharusnya dibaca sebagai satu bagian. Repository ini
+disiapkan untuk menguji apakah penggunaan struktur dokumen dapat menghasilkan
+unit retrieval yang lebih relevan.
+
+## Status pengembangan
+
+Pipeline yang tersedia saat ini mencakup:
 
 ```text
-PDF -> extraction -> cleaning -> structure detection -> chunking
+PDF
+  -> ekstraksi teks per halaman
+  -> pembersihan teks
+  -> deteksi struktur dokumen
+  -> fixed-size / structure-aware chunking
+  -> JSONL
 ```
 
-Komponen embedding, vector database, retrieval, generation, dan evaluasi akan
-ditambahkan pada milestone berikutnya agar setiap tahap tetap transparan dan
-mudah diuji.
-
-## Desain data
-
-Setiap tahap menulis artefak baru dan tidak menimpa artefak tahap sebelumnya:
-
-- `data/extracted/pages.jsonl`: satu record per halaman, berisi teks mentah.
-- `data/processed/pages.jsonl`: record halaman yang telah ditambah `clean_text`.
-- `data/processed/sections.jsonl`: section hasil deteksi pada teks dokumen.
-- `data/chunks/fixed_size/chunks.jsonl`: chunk baseline.
-- `data/chunks/structure_aware/chunks.jsonl`: chunk berbasis section.
-
-Posisi karakter pada section dan chunk mengacu pada gabungan `clean_text` per
-dokumen, dengan dua newline sebagai pemisah halaman. Semua identifier dibuat
-deterministik agar eksperimen dapat direproduksi.
+Embedding, vector database, retrieval, generation, dan evaluasi belum
+diimplementasikan. File untuk komponen tersebut masih berupa placeholder agar
+batas antarbagian sistem sudah jelas sejak awal.
 
 ## Struktur repository
 
 ```text
-configs/          konfigurasi umum dan varian eksperimen
-data/             artefak data per tahap (dataset besar diabaikan Git)
-experiments/      catatan dan hasil eksperimen
-notebooks/        eksplorasi data dan analisis hasil, bukan logic pipeline
-scripts/          entry point CLI berurutan
-src/              implementasi modular pipeline
-tests/            unit test
-vector_db/        index lokal per metode (diabaikan Git)
+configs/          Konfigurasi pipeline dan strategi chunking
+data/             Data mentah dan artefak hasil setiap tahap
+experiments/      Catatan konfigurasi dan hasil eksperimen
+notebooks/        Eksplorasi data dan analisis hasil
+scripts/          CLI untuk menjalankan pipeline secara berurutan
+src/              Implementasi utama
+tests/            Unit test
+vector_db/        Penyimpanan index lokal pada tahap berikutnya
 ```
+
+Kode utama dipisahkan berdasarkan tanggung jawab:
+
+- `src/preprocessing/`: ekstraksi PDF, pembersihan teks, dan deteksi section.
+- `src/chunking/`: interface chunker dan dua strategi yang dibandingkan.
+- `src/utils/`: pembacaan konfigurasi, JSONL, dan logging.
+- `src/cli.py`: orkestrasi command-line tanpa menyimpan logic pemrosesan inti.
 
 ## Instalasi
 
-Python 3.10 atau lebih baru direkomendasikan.
+Gunakan Python 3.10 atau versi yang lebih baru.
 
 ```powershell
+git clone https://github.com/indahgithaa/qa-legal.git
+cd qa-legal
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-`requirements.txt` memasang project dalam mode editable. Karena itu script dapat
-dijalankan dari root repository tanpa mengubah `sys.path` atau `PYTHONPATH`.
+Untuk Linux atau macOS, aktivasi virtual environment dengan:
 
-## Menjalankan pipeline awal
+```bash
+source .venv/bin/activate
+```
 
-1. Letakkan PDF di `data/raw/court_decisions/`.
-2. Jalankan tahap secara berurutan:
+Project dipasang dalam mode editable melalui `requirements.txt`. Script dapat
+dijalankan dari root repository tanpa mengubah `PYTHONPATH` atau `sys.path`.
+
+## Menyiapkan data
+
+Letakkan PDF putusan di:
+
+```text
+data/raw/court_decisions/
+```
+
+Subfolder diperbolehkan. Nama file relatif ikut disimpan sebagai provenance,
+sedangkan `document_id` dibuat secara deterministik dari path file. Dataset PDF
+dan seluruh artefak berukuran besar diabaikan oleh Git.
+
+## Menjalankan pipeline
+
+### 1. Ekstraksi PDF
 
 ```powershell
 python scripts/01_extract_pdf.py --config configs/default.yaml
+```
+
+Ekstraksi menggunakan PyMuPDF dan menghasilkan satu record untuk setiap
+halaman di `data/extracted/pages.jsonl`.
+
+### 2. Pembersihan teks dan deteksi struktur
+
+```powershell
 python scripts/02_preprocess.py --config configs/default.yaml
+```
+
+Tahap ini menghasilkan:
+
+- `data/processed/pages.jsonl`, berisi teks mentah dan teks bersih per halaman;
+- `data/processed/sections.jsonl`, berisi section yang terdeteksi beserta posisi
+  karakternya dalam dokumen.
+
+### 3. Membuat baseline chunks
+
+```powershell
 python scripts/03_chunk.py --config configs/baseline.yaml
+```
+
+Output disimpan di `data/chunks/fixed_size/chunks.jsonl`.
+
+### 4. Membuat structure-aware chunks
+
+```powershell
 python scripts/03_chunk.py --config configs/structure_aware.yaml
 ```
 
-Gunakan `--help` pada setiap script untuk melihat opsi override. Log ringkas
-menampilkan jumlah dokumen, halaman, section, atau chunk yang diproses.
+Output disimpan di `data/chunks/structure_aware/chunks.jsonl`.
 
-Untuk menjalankan test:
+Setiap script menyediakan opsi override, misalnya `--input`, `--output`, atau
+`--input-dir`. Jalankan script dengan `--help` untuk melihat opsi lengkap.
+
+## Format data
+
+Hasil ekstraksi disimpan per halaman. Contoh ringkas:
+
+```json
+{
+  "document_id": "putusan-contoh-a1b2c3d4",
+  "filename": "pidana/putusan-contoh.pdf",
+  "page_number": 1,
+  "raw_text": "..."
+}
+```
+
+Hasil deteksi struktur menyimpan label dan rentang karakter:
+
+```json
+{
+  "document_id": "putusan-contoh-a1b2c3d4",
+  "section_label": "pertimbangan_hukum",
+  "section_heading": "MENIMBANG",
+  "start_position": 4210,
+  "end_position": 8932,
+  "section_text": "..."
+}
+```
+
+Teks sebelum heading pertama atau teks yang tidak dapat dikenali tidak dibuang.
+Bagian tersebut diberi label `unknown` sehingga coverage dokumen tetap utuh.
+
+## Strategi chunking
+
+### Fixed-size
+
+Dokumen dipotong menjadi window berdasarkan jumlah kata. Window berikutnya
+menggunakan overlap yang tetap. Strategi ini tidak mempertimbangkan pergantian
+bagian dokumen dan digunakan sebagai baseline.
+
+### Structure-aware
+
+Dokumen terlebih dahulu dibagi berdasarkan section yang terdeteksi. Section
+yang terlalu panjang kemudian dipotong menggunakan ukuran dan overlap yang sama
+dengan baseline. Dengan cara ini, satu chunk tidak melintasi batas dua section.
+
+Kedua strategi mengimplementasikan interface `BaseChunker`. Parameter yang
+berpengaruh pada eksperimen berada di file YAML agar perbandingan dapat dilakukan
+dengan konfigurasi yang konsisten.
+
+## Menjalankan test
 
 ```powershell
 python -m pytest
 ```
 
-## Perbandingan metode chunking
+Test yang tersedia mencakup ekstraksi PDF sederhana, normalisasi teks, fallback
+deteksi struktur, preservasi isi dokumen, overlap fixed-size, batas section, dan
+round-trip JSONL.
 
-`FixedSizeChunker` menggabungkan teks bersih seluruh halaman dokumen, lalu
-membuat window berdasarkan jumlah kata dengan overlap tetap. Metode ini tidak
-mengetahui batas semantik dokumen dan menjadi baseline.
+## Konfigurasi
 
-`StructureAwareChunker` menerima hasil `StructureDetector`, menjaga chunk tetap
-berada di dalam section yang terdeteksi, kemudian hanya membagi section yang
-lebih panjang daripada batas konfigurasi. Teks yang tidak dapat dikenali diberi
-label `unknown`, bukan dibuang. Kedua metode memakai interface `BaseChunker` dan
-parameter ukuran/overlap yang sebanding.
+`configs/default.yaml` menyimpan path dan parameter umum. Konfigurasi eksperimen
+di `configs/baseline.yaml` dan `configs/structure_aware.yaml` mewarisi nilai
+tersebut lalu hanya mengganti strategi serta lokasi output yang relevan.
 
-Deteksi struktur saat ini berbasis pola heading yang eksplisit dan merupakan
-skeleton yang fungsional. Pengembangan berikutnya perlu mengukur coverage pola
-pada sampel putusan nyata, memperluas variasi heading, serta menambahkan golden
-dataset anotasi section sebelum masuk ke embedding dan retrieval.
+Parameter chunking awal:
 
+```yaml
+chunking:
+  max_words: 300
+  overlap_words: 50
+```
+
+Nilai ini masih merupakan konfigurasi awal, bukan hasil tuning.
+
+## Batasan saat ini
+
+Deteksi struktur masih menggunakan pola heading berbasis regular expression.
+Format putusan dapat berbeda antar-pengadilan, jenis perkara, dan periode, serta
+hasil ekstraksi PDF dapat mengandung noise atau berasal dari OCR. Karena itu,
+detector perlu divalidasi pada sampel data nyata sebelum dipakai dalam eksperimen
+retrieval.
+
+Tahap berikutnya adalah menyusun anotasi section pada sejumlah putusan,
+mengukur coverage dan kesalahan deteksi, lalu membekukan konfigurasi chunking
+sebelum membangun index embedding dan dataset evaluasi retrieval.
