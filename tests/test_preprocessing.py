@@ -21,6 +21,11 @@ putusan.mahkamahagung.go.id
 
 Terdakwa menyatakan â€œmenyesalâ€ dan mengajukan pembelaan.
 Halaman 4 dari 22 Putusan Nomor 59/Pid.Sus/2024/PN Lsm
+Hal. 4 dari hal. 22 Putusan Nomor 59/Pid.Sus/2024/PN Lsm
+Halaman 4 dari 22 Hal. Putusan Nomor 59/Pid.Sus/2024/PN Lsm
+Hal. 4 dari 22 hal Putusan Nomor 59/Pid.Sus/2024/PN Lsm
+Halaman 4 dari 22 halaman
+Pid.I.A.3
 Disclaimer
 Kepaniteraan Mahkamah Agung Republik Indonesia berusaha untuk selalu mencantumkan informasi paling kini dan akurat sebagai bentuk komitmen.
 Email : kepaniteraan@mahkamahagung.go.id Telp : 021-384 3348 (ext.318)

@@ -32,13 +32,47 @@ class StructureDetector:
     """
 
     DEFAULT_PATTERNS: tuple[tuple[str, Pattern[str]], ...] = (
-        ("kepala_putusan", re.compile(r"(?im)^[ \t]*(?:P\s*U\s*T\s*U\s*S\s*A\s*N|DEMI KEADILAN BERDASARKAN KETUHANAN YANG MAHA ESA)\b.*$")),
-        ("identitas_terdakwa", re.compile(r"(?im)^[ \t]*(?:IDENTITAS (?:TERDAKWA|PARA PIHAK)|Nama lengkap\s*:).*$")),
-        ("riwayat_penahanan", re.compile(r"(?im)^[ \t]*(?:RIWAYAT PENAHANAN|Terdakwa (?:telah )?ditahan)\b.*$")),
-        ("fakta", re.compile(r"(?im)^[ \t]*(?:FAKTA(?:-FAKTA)?|DAKWAAN|TUNTUTAN)\b.*$")),
-        ("pertimbangan_hukum", re.compile(r"(?im)^[ \t]*(?:PERTIMBANGAN HUKUM|MENIMBANG)\b.*$")),
-        ("amar_putusan", re.compile(r"(?im)^[ \t]*(?:AMAR PUTUSAN|MENGADILI)\b.*$")),
-        ("penutup", re.compile(r"(?im)^[ \t]*(?:PENUTUP|Demikian(?:lah)? diputuskan)\b.*$")),
+        (
+            "kepala_putusan",
+            re.compile(
+                r"(?im)^[ \t]*(?:P[ \t]+U[ \t]+T[ \t]+U[ \t]+S[ \t]+A[ \t]+N|"
+                r"PUTUSAN|DEMI KEADILAN BERDASARKAN KETUHANAN YANG MAHA ESA)[ \t:]*$"
+            ),
+        ),
+        (
+            "identitas_terdakwa",
+            re.compile(
+                r"(?im)^[ \t]*(?:IDENTITAS (?:TERDAKWA|PARA PIHAK)|"
+                r"(?:\d+[.)][ \t]*)?Nama[ \t]+lengkap(?:[ \t]*/)?)(?:[ \t]*:.*)?$"
+            ),
+        ),
+        (
+            "riwayat_penahanan",
+            re.compile(
+                r"(?im)^[ \t]*(?:RIWAYAT PENAHANAN|(?:Para[ \t]+)?Terdakwa\b"
+                r"[^\n]{0,200}\b(?:ditangkap|ditahan)\b).*$"
+            ),
+        ),
+        (
+            "fakta",
+            re.compile(r"(?m)^[ \t]*(?:FAKTA(?:-FAKTA)?|DAKWAAN|TUNTUTAN)[ \t:;]*$"),
+        ),
+        (
+            "pertimbangan_hukum",
+            re.compile(r"(?im)^[ \t]*(?:PERTIMBANGAN HUKUM|MENIMBANG)\b.*$"),
+        ),
+        (
+            "amar_putusan",
+            re.compile(
+                r"(?im)^[ \t]*(?:AMAR PUTUSAN|"
+                r"M(?:[ \t]+)?E(?:[ \t]+)?N(?:[ \t]+)?G(?:[ \t]+)?A(?:[ \t]+)?D"
+                r"(?:[ \t]+)?I(?:[ \t]+)?L(?:[ \t]+)?I)[ \t:]*$"
+            ),
+        ),
+        (
+            "penutup",
+            re.compile(r"(?im)^[ \t]*(?:PENUTUP|Demikian(?:lah)? diputuskan)\b.*$"),
+        ),
     )
 
     def __init__(self, *, fallback_label: str = "unknown") -> None:

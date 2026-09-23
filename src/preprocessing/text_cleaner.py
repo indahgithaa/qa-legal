@@ -35,8 +35,15 @@ _COURT_BOILERPLATE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^\s*Direktori\s+Putusan\s+Mahkamah\s+Agung\s+Republik\s+Indonesia\s*$", re.I),
     re.compile(r"^\s*putusan\.mahkamahagung\.go\.id(?:\s+[A-Za-z.]+\d*)?\s*$", re.I),
     re.compile(r"^\s*Disclaimer\s*$", re.I),
-    re.compile(r"^\s*Halaman\s+\d+\s+dari\s+\d+\s+Putusan\s+Nomor\b.*$", re.I),
-    re.compile(r"^\s*Halaman\s+\d+\s*$", re.I),
+    re.compile(
+        r"^\s*Hal(?:aman)?\.?\s+\d+\s+dari\s+"
+        r"(?:Hal(?:aman)?\.?\s*)?\d+"
+        r"(?:\s+Hal(?:aman)?\.?)?"
+        r"(?:\s+Putusan\s+Nomor\b.*)?\s*$",
+        re.I,
+    ),
+    re.compile(r"^\s*Hal(?:aman)?\.?\s+\d+\s*$", re.I),
+    re.compile(r"^\s*Pid\.[IVXLCDM]+\.[A-Z]\.\d+\s*$", re.I),
     re.compile(
         r"^\s*Kepaniteraan\s+Mahkamah\s+Agung\s+Republik\s+Indonesia\s+berusaha\s+"
         r"untuk\s+selalu\s+mencantumkan\s+informasi\b.*$",
