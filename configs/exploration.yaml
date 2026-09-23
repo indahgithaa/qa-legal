@@ -1,0 +1,8 @@
+extends: default.yaml
+
+paths:
+  raw_pdf_dir: data/raw/exploration_20
+  extracted_pages: data/extracted/exploration_20/pages.jsonl
+  processed_pages: data/processed/exploration_20/pages.jsonl
+  detected_sections: data/processed/exploration_20/sections.jsonl
+

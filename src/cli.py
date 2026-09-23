@@ -32,7 +32,9 @@ def extract_main(argv: Sequence[str] | None = None) -> None:
     output = args.output or _project_path(args.config, _get(config, "paths", "extracted_pages"))
     input_dir.mkdir(parents=True, exist_ok=True)
 
-    extractor = PDFExtractor()
+    extractor = PDFExtractor(
+        exclude_rotated_text=bool(config.get("extraction", {}).get("exclude_rotated_text", True))
+    )
     pages = extractor.extract_directory(
         input_dir,
         recursive=bool(config.get("extraction", {}).get("recursive", True)),
@@ -63,6 +65,8 @@ def preprocess_main(argv: Sequence[str] | None = None) -> None:
         normalize_unicode=bool(cleaning.get("normalize_unicode", True)),
         dehyphenate_line_breaks=bool(cleaning.get("dehyphenate_line_breaks", True)),
         collapse_whitespace=bool(cleaning.get("collapse_whitespace", True)),
+        repair_mojibake=bool(cleaning.get("repair_mojibake", True)),
+        remove_court_boilerplate=bool(cleaning.get("remove_court_boilerplate", True)),
     )
     processed_pages: list[dict[str, Any]] = []
     for page in read_jsonl(input_path):

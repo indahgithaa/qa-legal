@@ -1,0 +1,28 @@
+{
+  "purpose": "Exploratory preprocessing and chunking across varied court formats",
+  "selection": "Purposive stratified sample across all available courts and years 2020-2025",
+  "population_size": 200,
+  "sample_size": 20,
+  "files": [
+    "22__PN Cirebon__20_Pid.Sus_2023_PN Cbn.pdf",
+    "26__PN Cirebon__57_Pid.Sus_2023_PN Cbn.pdf",
+    "28__PN Gunungsitoli__189_Pid.Sus_2022_PN Gst.pdf",
+    "19__PN Klaten__241_Pid.Sus_2020_PN Kln.pdf",
+    "16__PN Klaten__51_Pid.Sus_2021_PN Kln.pdf",
+    "18__PN Klaten__225_Pid.Sus_2021_PN Kln.pdf",
+    "01__PN Lhokseumawe__59_Pid.Sus_2024_PN Lsm.pdf",
+    "PN Lhokseumawe__172_Pid.Sus_2024_PN Lsm.pdf",
+    "45__PN Lhokseumawe__10_Pid.Sus_2025_PN Lsm.pdf",
+    "PN Lhokseumawe__17_Pid.Sus_2025_PN Lsm.pdf",
+    "29__PN Mentok__125_Pid.Sus_2024_PN Mtk.pdf",
+    "32__PN Palu__349_Pid.Sus_2022_PN Pal.pdf",
+    "PN Palu__365_Pid.Sus_2022_PN Pal.pdf",
+    "11__PN Palu__262_Pid.Sus_2023_PN Pal.pdf",
+    "PN Palu__349_Pid.Sus_2023_PN Pal.pdf",
+    "03__PN Palu__210_Pid.Sus_2024_PN Pal.pdf",
+    "PN Palu__124_Pid.Sus_2024_PN Pal.pdf",
+    "PN Palu__306_Pid.Sus_2024_PN Pal.pdf",
+    "31__PN Rangkasbitung__233_Pid.Sus_2021_PN Rkb.pdf",
+    "30__PN Rangkasbitung__117_Pid.Sus_2022_PN Rkb.pdf"
+  ]
+}

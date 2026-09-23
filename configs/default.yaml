@@ -9,11 +9,14 @@ paths:
 
 extraction:
   recursive: true
+  exclude_rotated_text: true
 
 preprocessing:
   normalize_unicode: true
   dehyphenate_line_breaks: true
   collapse_whitespace: true
+  repair_mojibake: true
+  remove_court_boilerplate: true
 
 structure_detection:
   fallback_label: unknown

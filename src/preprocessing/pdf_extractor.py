@@ -28,6 +28,16 @@ class ExtractedPage:
 class PDFExtractor:
     """Extract page text while preserving page-level provenance."""
 
+    def __init__(self, *, exclude_rotated_text: bool = True) -> None:
+        """Configure extraction of text commonly used as diagonal watermarks.
+
+        Indonesian Supreme Court PDFs frequently contain a large diagonal
+        watermark. PyMuPDF includes fragments of that watermark in plain-text
+        extraction, sometimes in the middle of legal sentences. Directional
+        metadata lets us remove those fragments without matching legal words.
+        """
+        self.exclude_rotated_text = exclude_rotated_text
+
     def extract_file(self, pdf_path: Path, *, source_root: Path | None = None) -> list[ExtractedPage]:
         """Extract all pages from one PDF.
 
@@ -47,10 +57,35 @@ class PDFExtractor:
                         document_id=document_id,
                         filename=relative_path.as_posix(),
                         page_number=index,
-                        raw_text=page.get_text("text", sort=True),
+                        raw_text=self._extract_page_text(page),
                     )
                 )
         return pages
+
+    def _extract_page_text(self, page: fitz.Page) -> str:
+        """Extract reading-order text and optionally discard rotated lines."""
+        if not self.exclude_rotated_text:
+            return page.get_text("text", sort=True)
+
+        blocks: list[str] = []
+        page_dict = page.get_text("dict", sort=True)
+        for block in page_dict.get("blocks", []):
+            lines: list[str] = []
+            for line in block.get("lines", []):
+                direction = line.get("dir", (1.0, 0.0))
+                if not self._is_horizontal(direction):
+                    continue
+                line_text = "".join(str(span.get("text", "")) for span in line.get("spans", []))
+                if line_text:
+                    lines.append(line_text)
+            if lines:
+                blocks.append("\n".join(lines))
+        return "\n\n".join(blocks)
+
+    @staticmethod
+    def _is_horizontal(direction: tuple[float, float] | list[float]) -> bool:
+        """Return whether a line runs left-to-right with a small tolerance."""
+        return len(direction) >= 2 and float(direction[0]) > 0.999 and abs(float(direction[1])) < 0.001
 
     def extract_directory(self, input_dir: Path, *, recursive: bool = True) -> list[ExtractedPage]:
         """Extract all PDFs below a directory in deterministic path order."""

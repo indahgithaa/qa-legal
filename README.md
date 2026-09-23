@@ -85,6 +85,23 @@ Subfolder diperbolehkan. Nama file relatif ikut disimpan sebagai provenance,
 sedangkan `document_id` dibuat secara deterministik dari path file. Dataset PDF
 dan seluruh artefak berukuran besar diabaikan oleh Git.
 
+### Sampel eksplorasi 20 dokumen
+
+Eksplorasi awal dapat menggunakan sampel purposive 20 dokumen yang tercatat di
+`experiments/exploration_20_manifest.json`. Salin file pada manifest ke
+`data/raw/exploration_20/`, lalu jalankan:
+
+```powershell
+python scripts/01_extract_pdf.py --config configs/exploration.yaml
+python scripts/02_preprocess.py --config configs/exploration.yaml
+python scripts/03_chunk.py --config configs/exploration_baseline.yaml
+python scripts/03_chunk.py --config configs/exploration_structure_aware.yaml
+```
+
+Output disimpan pada subfolder `exploration_20` di setiap tahap. Sampel ini
+memaksimalkan variasi pengadilan dan tahun untuk eksplorasi format; sampel tidak
+dimaksudkan untuk mengestimasi distribusi statistik seluruh corpus.
+
 ## Menjalankan pipeline
 
 ### 1. Ekstraksi PDF
@@ -94,7 +111,9 @@ python scripts/01_extract_pdf.py --config configs/default.yaml
 ```
 
 Ekstraksi menggunakan PyMuPDF dan menghasilkan satu record untuk setiap
-halaman di `data/extracted/pages.jsonl`.
+halaman di `data/extracted/pages.jsonl`. Secara default, baris teks nonhorizontal
+dikeluarkan untuk mencegah fragmen watermark diagonal tersisip di tengah isi
+putusan.
 
 ### 2. Pembersihan teks dan deteksi struktur
 
@@ -107,6 +126,11 @@ Tahap ini menghasilkan:
 - `data/processed/pages.jsonl`, berisi teks mentah dan teks bersih per halaman;
 - `data/processed/sections.jsonl`, berisi section yang terdeteksi beserta posisi
   karakternya dalam dokumen.
+
+Pembersihan teks memperbaiki artefak encoding yang umum dan menghapus baris
+boilerplate Mahkamah Agung yang dikenali secara eksplisit, seperti header
+direktori, URL, nomor halaman, disclaimer, dan informasi kontak. Kalimat hukum
+yang hanya menyebut Mahkamah Agung tidak dihapus.
 
 ### 3. Membuat baseline chunks
 
@@ -180,15 +204,26 @@ dengan konfigurasi yang konsisten.
 python -m pytest
 ```
 
-Test yang tersedia mencakup ekstraksi PDF sederhana, normalisasi teks, fallback
-deteksi struktur, preservasi isi dokumen, overlap fixed-size, batas section, dan
-round-trip JSONL.
+Test yang tersedia mencakup ekstraksi PDF sederhana, penyaringan watermark,
+normalisasi dan pembersihan boilerplate, fallback deteksi struktur, preservasi
+isi dokumen, overlap fixed-size, batas section, dan round-trip JSONL.
 
 ## Konfigurasi
 
 `configs/default.yaml` menyimpan path dan parameter umum. Konfigurasi eksperimen
 di `configs/baseline.yaml` dan `configs/structure_aware.yaml` mewarisi nilai
 tersebut lalu hanya mengganti strategi serta lokasi output yang relevan.
+
+Penyaringan noise PDF dapat dimatikan secara terpisah untuk eksperimen ablasi:
+
+```yaml
+extraction:
+  exclude_rotated_text: true
+
+preprocessing:
+  repair_mojibake: true
+  remove_court_boilerplate: true
+```
 
 Parameter chunking awal:
 
