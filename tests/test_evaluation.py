@@ -1,0 +1,121 @@
+"""Tests for structure-review and retrieval evaluation metrics."""
+
+import pytest
+
+from src.evaluation import evaluate_retrieval, score_structure_review
+
+
+def test_evaluate_retrieval_scores_ranked_results_and_missing_runs() -> None:
+    qrels = {
+        "q1": {"a": 2, "b": 1},
+        "q2": {"c": 1},
+    }
+    runs = {"q1": ["x", "b", "a"]}
+
+    score = evaluate_retrieval(qrels, runs, ks=(1, 3))
+
+    assert score["query_count"] == 2
+    assert score["per_query"]["q1"]["recall@1"] == 0
+    assert score["per_query"]["q1"]["recall@3"] == 1
+    assert score["per_query"]["q1"]["mrr@3"] == 0.5
+    assert 0 < score["per_query"]["q1"]["ndcg@3"] < 1
+    assert score["per_query"]["q2"]["recall@3"] == 0
+    assert score["aggregate"]["recall@3"] == 0.5
+
+
+def test_evaluate_retrieval_deduplicates_ranked_chunks() -> None:
+    score = evaluate_retrieval(
+        {"q1": {"relevant": 1}},
+        {"q1": ["noise", "noise", "relevant"]},
+        ks=(2,),
+    )
+
+    assert score["per_query"]["q1"]["mrr@2"] == 0.5
+
+
+def test_evaluate_retrieval_rejects_query_without_positive_qrel() -> None:
+    with pytest.raises(ValueError, match="no relevant chunks"):
+        evaluate_retrieval({"q1": {"a": 0}}, {"q1": ["a"]})
+
+
+def test_structure_review_scores_completed_sheet() -> None:
+    labels = [
+        "kepala_putusan",
+        "identitas_terdakwa",
+        "riwayat_penahanan",
+        "fakta",
+        "pertimbangan_hukum",
+        "amar_putusan",
+        "penutup",
+    ]
+    rows = [
+        {
+            "document_id": "doc-1",
+            "section_label": label,
+            "detected": "yes",
+            "gold_present": "yes",
+            "review_status": "near" if label == "identitas_terdakwa" else "exact",
+        }
+        for label in labels
+    ]
+
+    score = score_structure_review(rows)
+
+    assert score["complete"] is True
+    assert score["acceptance"]["passed"] is True
+    assert score["per_label"]["identitas_terdakwa"]["exact_recall"] == 0
+    assert score["per_label"]["identitas_terdakwa"]["tolerant_recall"] == 1
+
+
+def test_structure_review_defers_acceptance_until_complete() -> None:
+    rows = [
+        {
+            "document_id": "doc-1",
+            "section_label": "amar_putusan",
+            "detected": "yes",
+            "gold_present": "yes",
+            "review_status": "exact",
+        },
+        {
+            "document_id": "doc-2",
+            "section_label": "amar_putusan",
+            "detected": "yes",
+            "gold_present": "",
+            "review_status": "",
+        },
+    ]
+
+    score = score_structure_review(rows)
+
+    assert score["completion"] == 0.5
+    assert score["acceptance"] is None
+
+
+def test_structure_review_requires_gold_presence_for_reviewed_rows() -> None:
+    with pytest.raises(ValueError, match="gold_present"):
+        score_structure_review(
+            [
+                {
+                    "document_id": "doc-1",
+                    "section_label": "amar_putusan",
+                    "detected": "yes",
+                    "gold_present": "",
+                    "review_status": "exact",
+                }
+            ]
+        )
+
+
+def test_structure_review_rejects_status_inconsistent_with_detection() -> None:
+    with pytest.raises(ValueError, match="requires detected=yes"):
+        score_structure_review(
+            [
+                {
+                    "document_id": "doc-1",
+                    "section_label": "amar_putusan",
+                    "detected": "no",
+                    "gold_present": "yes",
+                    "review_status": "exact",
+                }
+            ]
+        )

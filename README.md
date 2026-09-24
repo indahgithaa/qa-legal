@@ -25,13 +25,16 @@ PDF
   -> deteksi struktur dokumen
   -> fixed-size / structure-aware chunking
   -> audit struktur dan distribusi chunk
+  -> scoring review struktur
+  -> template pertanyaan dan metrik evaluasi retrieval
   -> JSONL
 ```
 
-Embedding, vector database, retrieval, generation, dan evaluasi retrieval belum
-diimplementasikan. File untuk komponen tersebut masih berupa placeholder agar
-batas antarbagian sistem sudah jelas sejak awal. Audit eksplorasi tersedia untuk
-memvalidasi keluaran chunking sebelum tahap tersebut dimulai.
+Metrik Recall, MRR, dan nDCG sudah tersedia. Embedding, vector database,
+retrieval, dan generation belum diimplementasikan. File untuk komponen tersebut
+masih berupa placeholder agar batas antarbagian sistem sudah jelas sejak awal.
+Audit eksplorasi dan lembar anotasi tersedia untuk memvalidasi keluaran chunking
+sebelum index dibangun.
 
 ## Struktur repository
 
@@ -114,6 +117,21 @@ Perintah ini memeriksa coverage karakter dan offset, merangkum cakupan label,
 membandingkan distribusi kedua strategi, serta menulis laporan dan template
 review ke `experiments/results/`. Petunjuk anotasi dan kriteria penerimaan berada
 di `experiments/structure_validation_protocol.md`.
+
+Setelah lembar review diisi, hitung metrik batas struktur dengan:
+
+```powershell
+python scripts/score_structure_review.py
+```
+
+Siapkan 80 slot pertanyaan pilot yang terstratifikasi dengan:
+
+```powershell
+python scripts/prepare_retrieval_questions.py
+```
+
+Skema anotasi bukti, aturan relevansi, pemisahan pilot dan holdout, serta metrik
+eksperimen dijelaskan di `experiments/retrieval_evaluation_protocol.md`.
 
 ## Menjalankan pipeline
 
@@ -234,6 +252,8 @@ python -m pytest
 Test yang tersedia mencakup ekstraksi PDF sederhana, penyaringan watermark,
 normalisasi dan pembersihan boilerplate, fallback deteksi struktur, preservasi
 isi dokumen, overlap fixed-size, batas section, dan round-trip JSONL.
+Metrik review struktur serta Recall, MRR, dan nDCG juga diuji tanpa dependensi
+evaluasi tambahan.
 
 ## Konfigurasi
 
@@ -274,6 +294,6 @@ hasil ekstraksi PDF dapat mengandung noise atau berasal dari OCR. Karena itu,
 detector perlu divalidasi pada sampel data nyata sebelum dipakai dalam eksperimen
 retrieval.
 
-Tahap berikutnya adalah menyusun anotasi section pada sejumlah putusan,
-mengukur coverage dan kesalahan deteksi, lalu membekukan konfigurasi chunking
-sebelum membangun index embedding dan dataset evaluasi retrieval.
+Tahap berikutnya adalah menyelesaikan review manual batas section dan pertanyaan
+pilot, lalu membekukan konfigurasi chunking sebelum membangun index embedding.
+Evaluasi final tetap memerlukan sampel holdout pada tingkat dokumen.

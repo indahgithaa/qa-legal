@@ -304,6 +304,7 @@ def write_annotation_template(path: Path, audit: dict[str, Any]) -> None:
         "detected_heading",
         "detected_start_position",
         "detected_word_count",
+        "gold_present",
         "review_status",
         "gold_heading",
         "reviewer_notes",
@@ -325,6 +326,7 @@ def write_annotation_template(path: Path, audit: dict[str, Any]) -> None:
                         "detected_word_count": (
                             _word_count(str(detected.get("section_text", ""))) if detected else ""
                         ),
+                        "gold_present": "",
                         "review_status": "",
                         "gold_heading": "",
                         "reviewer_notes": "",

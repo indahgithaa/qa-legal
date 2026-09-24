@@ -30,6 +30,7 @@ pertama sebagai `gold_heading` dan jelaskan keputusan singkat pada catatan.
 
 ## Nilai review_status
 
+- Isi `gold_present` dengan `yes` jika section memang ada dan `no` jika tidak.
 - `exact`: label dan awal section tepat;
 - `near`: label tepat, tetapi awal bergeser paling jauh satu paragraf;
 - `missed`: section ada tetapi tidak terdeteksi;
@@ -38,6 +39,11 @@ pertama sebagai `gold_heading` dan jelaskan keputusan singkat pada catatan.
 
 Isi `gold_heading` untuk `near`, `missed`, dan `false_positive`. Jangan mengubah
 kolom hasil detector karena kolom tersebut adalah prediksi yang akan dievaluasi.
+Kombinasi yang konsisten adalah `gold_present=yes` untuk `exact`, `near`, dan
+`missed`; serta `gold_present=no` untuk `not_applicable`. `false_positive` dapat
+memiliki `gold_present=yes` jika section sebenarnya ada di lokasi lain.
+Status `exact`, `near`, dan `false_positive` dipakai pada baris `detected=yes`;
+status `missed` dan `not_applicable` dipakai pada baris `detected=no`.
 
 ## Metrik dan kriteria penerimaan
 
