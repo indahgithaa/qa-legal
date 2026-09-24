@@ -2,10 +2,16 @@
 
 ## Tujuan
 
-Evaluasi membandingkan `fixed_size` dan `structure_aware` dengan pertanyaan,
-corpus dokumen, model embedding, dan parameter pencarian yang sama. Unit analisis
-utama adalah pertanyaan, sehingga selisih skor kedua strategi dapat dihitung
-secara berpasangan.
+Evaluasi membandingkan tiga kondisi dengan pertanyaan, corpus dokumen, model
+embedding, dan parameter pencarian yang sama:
+
+- `nsc`: fixed-size tanpa overlap, sesuai mekanisme baseline NSC pada paper SAC;
+- `fixed_size`: fixed-size dengan overlap 50 kata, sebagai baseline RAG praktis;
+- `structure_aware`: SAC-H+ dengan batas retoris dan overlap dua kalimat.
+
+Unit analisis utama adalah pertanyaan, sehingga selisih skor strategi dapat
+dihitung secara berpasangan. Dua baseline memisahkan pengaruh batas retoris dari
+pengaruh overlap semata.
 
 Sampel `exploration_20` dipakai sebagai pilot untuk memperbaiki pipeline dan
 pedoman anotasi. Hasil dari sampel ini tidak menjadi estimasi final karena
@@ -93,8 +99,9 @@ atau `0` bila tidak cukup.
    parameter retrieval sebelum menjalankan holdout.
 3. Bangun dua index dari corpus yang sama, satu index per strategi.
 4. Jalankan setiap pertanyaan pada kedua index dengan nilai `k` yang sama.
-5. Laporkan Recall@1/3/5/10, MRR@1/3/5/10, dan nDCG@1/3/5/10 secara keseluruhan
-   serta per `target_section_label`.
+5. Gunakan Hit@5 sebagai metrik primer karena jumlah chunk relevan dapat berbeda
+   akibat overlap. Laporkan juga Hit@1/3/10, MRR@1/3/5/10, nDCG@1/3/5/10, dan
+   Recall@1/3/5/10 secara keseluruhan serta per `target_section_label`.
 6. Hitung selisih skor per pertanyaan antara SAC dan fixed-size. Laporkan interval
    kepercayaan bootstrap berpasangan untuk selisih rata-rata pada evaluasi final.
 7. Tinjau contoh kemenangan dan kegagalan kedua strategi, khususnya bukti yang
@@ -105,7 +112,8 @@ alasannya. Konfigurasi tersebut kemudian dibekukan sebelum evaluasi holdout.
 
 ## Kriteria kesiapan
 
-Eksperimen embedding dimulai setelah review batas struktur selesai dan seluruh
-pertanyaan pilot berstatus `approved`. Klaim utama baru dibuat dari holdout yang
-terpisah pada tingkat dokumen. Pertanyaan dari satu dokumen tidak boleh dibagi ke
-set pengembangan dan holdout.
+Eksperimen embedding dimulai setelah `validate_sac_compliance.py` lulus dan
+seluruh pertanyaan pilot berstatus `approved`. Review struktur lengkap bersifat
+diagnostik dan tidak lagi menghambat pembangunan index. Klaim utama baru dibuat
+dari holdout yang terpisah pada tingkat dokumen. Pertanyaan dari satu dokumen
+tidak boleh dibagi ke set pengembangan dan holdout.

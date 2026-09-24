@@ -1,10 +1,23 @@
 # Protokol validasi struktur dokumen
 
-Tujuan tahap ini adalah memastikan bahwa batas section cukup akurat sebelum
-structure-aware chunking dibandingkan dengan baseline pada eksperimen retrieval.
+Tujuan tahap ini adalah memeriksa kepatuhan implementasi terhadap SAC-H+ dan
+menganalisis kesalahan batas section. Kepatuhan metode diperiksa otomatis dan
+menjadi gerbang pipeline; review manusia dipakai sebagai audit diagnostik.
 Sampel eksplorasi 20 dokumen dipakai untuk mengembangkan aturan. Hasil pada
 sampel ini tidak boleh dilaporkan sebagai estimasi performa final detector karena
-aturan akan diperbaiki berdasarkan dokumen yang sama.
+aturan telah diperbaiki berdasarkan dokumen yang sama.
+
+Jalankan pemeriksaan kepatuhan utama dengan:
+
+```powershell
+python scripts/validate_sac_compliance.py
+```
+
+Pemeriksaan ini mengikuti Sonowal dan Sadhu (2025): tiga strata retoris, cascade
+top-down, conclusion pada jendela 20% akhir, trigger berpresisi tinggi, chunk
+yang tidak melintasi strata, dan overlap konteks di dalam strata. Lulusnya
+pemeriksaan membuktikan kesesuaian implementasi dengan metode, bukan akurasi
+semantik setiap batas pada yurisdiksi Indonesia.
 
 ## Unit anotasi
 
@@ -49,10 +62,10 @@ memiliki `gold_present=yes` jika section sebenarnya ada di lokasi lain.
 Status `exact`, `near`, dan `false_positive` dipakai pada baris `detected=yes`;
 status `missed` dan `not_applicable` dipakai pada baris `detected=no`.
 
-## Metrik dan kriteria penerimaan
+## Metrik audit manusia
 
 Laporkan exact boundary accuracy, accuracy dengan toleransi satu paragraf,
-recall per label, dan jumlah false positive. Konfigurasi boleh dibekukan jika:
+recall per label, dan jumlah false positive. Target diagnostik yang digunakan:
 
 1. `amar_putusan` mencapai exact recall 100%;
 2. `identitas_terdakwa`, `fakta`, `pertimbangan_hukum`, dan `penutup` masing-masing
@@ -61,6 +74,8 @@ recall per label, dan jumlah false positive. Konfigurasi boleh dibekukan jika:
    `pertimbangan_hukum` tertukar; dan
 4. semua dokumen tetap memiliki coverage karakter 100% tanpa overlap section.
 
-Setelah aturan memenuhi kriteria pada sampel pengembangan, validasi sekali lagi
-pada sampel holdout yang belum pernah dipakai untuk menulis pola regex. Baru
-setelah itu bekukan konfigurasi chunking dan susun dataset pertanyaan retrieval.
+Review lengkap 140 baris tidak menjadi prasyarat pembangunan index. Sebelum
+publikasi, audit batas makro `fakta`, `pertimbangan_hukum`, dan `amar_putusan`
+pada holdout yang belum pernah dipakai untuk menulis pola regex. Klaim utama
+tentang manfaat chunking ditentukan oleh evaluasi retrieval berpasangan pada
+holdout tersebut.

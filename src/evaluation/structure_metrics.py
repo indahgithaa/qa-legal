@@ -73,7 +73,7 @@ def score_structure_review(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 def render_structure_score(score: Mapping[str, Any]) -> str:
     """Render structure-review metrics as a compact Markdown report."""
     lines = [
-        "# Hasil validasi struktur",
+        "# Audit manual batas struktur",
         "",
         f"Review selesai: {score['reviewed_rows']}/{score['total_rows']} "
         f"({score['completion']:.1%})",
@@ -90,11 +90,11 @@ def render_structure_score(score: Mapping[str, Any]) -> str:
         )
     lines.append("")
     if score["acceptance"] is None:
-        lines.append("Kriteria milestone belum dinilai karena review belum lengkap.")
+        lines.append("Target diagnostik belum dinilai karena audit manual belum lengkap.")
     elif score["acceptance"]["passed"]:
-        lines.append("Kriteria milestone: **LULUS**.")
+        lines.append("Target diagnostik: **LULUS**.")
     else:
-        lines.append("Kriteria milestone: **BELUM LULUS**.")
+        lines.append("Target diagnostik: **BELUM LULUS**.")
         lines.extend(f"- {reason}" for reason in score["acceptance"]["reasons"])
     lines.append("")
     return "\n".join(lines)

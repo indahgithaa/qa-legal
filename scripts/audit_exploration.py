@@ -283,11 +283,10 @@ def render_report(audit: dict[str, Any]) -> str:
             "",
             "## Keputusan milestone",
             "",
-            "Konfigurasi deteksi struktur belum siap dibekukan. Isi lembar "
-            "`exploration_20_structure_review.csv` dengan protokol di "
-            "`experiments/structure_validation_protocol.md`, perbaiki detector berdasarkan kesalahan "
-            "yang teramati, lalu jalankan audit ulang. Pembangunan embedding dan retrieval dimulai "
-            "setelah kriteria penerimaan validasi terpenuhi.",
+            "Jalankan `python scripts/validate_sac_compliance.py` sebagai gerbang otomatis "
+            "kepatuhan metode. Lembar `exploration_20_structure_review.csv` digunakan untuk audit "
+            "error, bukan sebagai penghambat pembangunan index. Setelah kepatuhan lulus, lanjutkan "
+            "penyusunan benchmark retrieval dan validasi outcome pada holdout.",
             "",
         ]
     )

@@ -119,7 +119,69 @@ class StructureAwareChunker(BaseChunker):
                 next_start += 1
             sentence_start = next_start
 
-        return windows
+        return self._ensure_context_overlap(text, windows, offset=offset)
+
+    def _ensure_context_overlap(
+        self,
+        text: str,
+        windows: list[tuple[str, int, int]],
+        *,
+        offset: int,
+    ) -> list[tuple[str, int, int]]:
+        """Bridge resets between oversized-sentence fallbacks.
+
+        SAC-H+ normally overlaps complete sentences. A sentence that already
+        exceeds the word budget cannot be carried intact, so the word overlap
+        is used across that boundary. If expanding the next window would exceed
+        the budget, a bridge window is inserted before it.
+        """
+        if len(windows) < 2 or self.overlap_words == 0:
+            return windows
+
+        result = [windows[0]]
+        for current in windows[1:]:
+            previous = result[-1]
+            if current[1] < previous[2]:
+                result.append(current)
+                continue
+
+            previous_start = previous[1] - offset
+            previous_end = previous[2] - offset
+            current_start = current[1] - offset
+            current_end = current[2] - offset
+            previous_words = list(re.finditer(r"\S+", text[previous_start:previous_end]))
+            current_words = list(re.finditer(r"\S+", text[current_start:current_end]))
+            context_count = min(self.overlap_words, len(previous_words))
+            context_start = (
+                previous_start + previous_words[-context_count].start()
+                if context_count
+                else current_start
+            )
+
+            if context_count + len(current_words) <= self.max_words:
+                result.append(
+                    (
+                        text[context_start:current_end],
+                        offset + context_start,
+                        offset + current_end,
+                    )
+                )
+                continue
+
+            new_word_budget = self.max_words - context_count
+            if new_word_budget <= 0:
+                result.append(current)
+                continue
+            bridge_end = current_start + current_words[new_word_budget - 1].end()
+            result.append(
+                (
+                    text[context_start:bridge_end],
+                    offset + context_start,
+                    offset + bridge_end,
+                )
+            )
+            result.append(current)
+        return result
 
     @staticmethod
     def _sentence_spans(text: str) -> list[tuple[int, int]]:

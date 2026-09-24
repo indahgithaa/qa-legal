@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.chunking import FixedSizeChunker, StructureAwareChunker
+from src.chunking import FixedSizeChunker, NaiveSequentialChunker, StructureAwareChunker
 
 
 def test_fixed_size_chunker_uses_configured_overlap() -> None:
@@ -15,6 +15,20 @@ def test_fixed_size_chunker_uses_configured_overlap() -> None:
         ["tujuh", "delapan", "sembilan", "sepuluh"],
     ]
     assert all(text[chunk.start_position : chunk.end_position] == chunk.text for chunk in chunks)
+
+
+def test_nsc_chunker_uses_non_overlapping_windows_and_distinct_strategy() -> None:
+    text = "satu dua tiga empat lima enam tujuh"
+
+    chunks = NaiveSequentialChunker(max_words=3).chunk("doc", text)
+
+    assert [chunk.text.split() for chunk in chunks] == [
+        ["satu", "dua", "tiga"],
+        ["empat", "lima", "enam"],
+        ["tujuh"],
+    ]
+    assert all(chunk.strategy == "nsc" for chunk in chunks)
+    assert all(current.start_position > previous.end_position for previous, current in zip(chunks, chunks[1:]))
 
 
 def test_structure_aware_chunks_do_not_cross_section_boundaries() -> None:
@@ -80,6 +94,32 @@ def test_structure_aware_uses_two_sentence_overlap() -> None:
 def test_structure_aware_rejects_negative_sentence_overlap() -> None:
     with pytest.raises(ValueError):
         StructureAwareChunker(overlap_sentences=-1)
+
+
+def test_structure_aware_bridges_consecutive_oversized_sentences() -> None:
+    text = "satu dua tiga empat lima. enam tujuh delapan sembilan sepuluh."
+    sections = [
+        {
+            "section_label": "fakta",
+            "section_heading": None,
+            "start_position": 0,
+            "end_position": len(text),
+            "section_text": text,
+        }
+    ]
+
+    chunks = StructureAwareChunker(
+        max_words=4,
+        overlap_words=1,
+        overlap_sentences=2,
+    ).chunk("doc", text, sections=sections)
+
+    assert all(len(chunk.text.split()) <= 4 for chunk in chunks)
+    assert all(
+        current.start_position < previous.end_position
+        for previous, current in zip(chunks, chunks[1:])
+    )
+    assert all(text[chunk.start_position : chunk.end_position] == chunk.text for chunk in chunks)
 
 
 def test_invalid_overlap_is_rejected() -> None:
