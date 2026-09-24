@@ -137,6 +137,14 @@ Siapkan 80 slot pertanyaan pilot yang terstratifikasi dengan:
 python scripts/prepare_retrieval_questions.py
 ```
 
+Validasi pertanyaan yang sudah diisi dan buat kandidat relevansi chunk setelah
+statusnya `approved`:
+
+```powershell
+python scripts/validate_retrieval_questions.py
+python scripts/prepare_retrieval_qrels.py
+```
+
 Skema anotasi bukti, aturan relevansi, pemisahan pilot dan holdout, serta metrik
 eksperimen dijelaskan di `experiments/retrieval_evaluation_protocol.md`.
 

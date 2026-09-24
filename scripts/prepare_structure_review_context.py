@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import argparse
 import csv
-from collections import defaultdict
 from html import escape
 from pathlib import Path
 from typing import Any, Sequence
 
+from src.evaluation.ground_truth import join_clean_pages
 from src.utils.io import read_jsonl
 
 
@@ -50,20 +50,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(report, encoding="utf-8", newline="\n")
     print(f"Wrote context for {len(rows)} review rows to {args.output}")
-
-
-def join_clean_pages(pages: list[dict[str, Any]]) -> dict[str, str]:
-    """Rebuild the exact document text used by preprocessing and chunking."""
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for page in pages:
-        grouped[str(page["document_id"])].append(page)
-    return {
-        document_id: "\n\n".join(
-            str(page.get("clean_text", ""))
-            for page in sorted(document_pages, key=lambda item: int(item["page_number"]))
-        )
-        for document_id, document_pages in grouped.items()
-    }
 
 
 def render_review_context(

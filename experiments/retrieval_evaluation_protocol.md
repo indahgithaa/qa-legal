@@ -34,6 +34,12 @@ Template pilot dibuat dengan:
 python scripts/prepare_retrieval_questions.py
 ```
 
+Periksa progres dan konsistensi baris yang telah diisi dengan:
+
+```powershell
+python scripts/validate_retrieval_questions.py
+```
+
 ## Skema anotasi
 
 Setiap baris memiliki kolom berikut:
@@ -69,6 +75,16 @@ secara terpisah untuk setiap strategi:
 Kasus grade 1 harus diperiksa manual karena overlap karakter saja belum menjamin
 bahwa konteks jawaban tersedia. Cara ini mencegah skema anotasi menguntungkan
 salah satu strategi dan memungkinkan nDCG memakai tingkat relevansi.
+
+Setelah pertanyaan berstatus `approved`, buat kandidat qrels untuk kedua strategi:
+
+```powershell
+python scripts/prepare_retrieval_qrels.py
+```
+
+Grade 2 diisi otomatis ketika satu chunk memuat seluruh bukti. Periksa kandidat
+grade 1 dan isi `relevance_grade` dengan `1` bila konteksnya cukup untuk menjawab,
+atau `0` bila tidak cukup.
 
 ## Prosedur eksperimen
 

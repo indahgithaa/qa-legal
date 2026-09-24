@@ -2,7 +2,12 @@
 
 import pytest
 
-from src.evaluation import evaluate_retrieval, score_structure_review
+from src.evaluation import (
+    build_qrel_candidates,
+    evaluate_retrieval,
+    score_structure_review,
+    validate_questions,
+)
 
 
 def test_evaluate_retrieval_scores_ranked_results_and_missing_runs() -> None:
@@ -119,3 +124,85 @@ def test_structure_review_rejects_status_inconsistent_with_detection() -> None:
                 }
             ]
         )
+
+
+def test_validate_questions_checks_approved_evidence_span() -> None:
+    rows = [
+        {
+            "query_id": "q1",
+            "document_id": "doc-1",
+            "target_section_label": "amar_putusan",
+            "question": "Apa amar putusan?",
+            "reference_answer": "Pidana penjara.",
+            "evidence_start_position": "6",
+            "evidence_end_position": "19",
+            "difficulty": "easy",
+            "review_status": "approved",
+        }
+    ]
+
+    result = validate_questions(rows, {"doc-1": "awal. Pidana penjara."})
+
+    assert result["valid"] is True
+    assert result["ready"] is True
+    assert result["approved_count"] == 1
+
+
+def test_validate_questions_allows_unreviewed_template_rows() -> None:
+    rows = [
+        {
+            "query_id": "q1",
+            "document_id": "doc-1",
+            "target_section_label": "fakta",
+            "review_status": "",
+        }
+    ]
+
+    result = validate_questions(rows, {"doc-1": "Teks dokumen."})
+
+    assert result["valid"] is True
+    assert result["ready"] is False
+    assert result["status_counts"] == {"unreviewed": 1}
+
+
+def test_build_qrel_candidates_grades_full_and_partial_evidence() -> None:
+    questions = [
+        {
+            "query_id": "q1",
+            "document_id": "doc-1",
+            "target_section_label": "fakta",
+            "review_status": "approved",
+            "evidence_start_position": "10",
+            "evidence_end_position": "20",
+        }
+    ]
+    chunks = [
+        {
+            "chunk_id": "fixed-1",
+            "document_id": "doc-1",
+            "strategy": "fixed_size",
+            "start_position": 0,
+            "end_position": 30,
+        },
+        {
+            "chunk_id": "sac-1",
+            "document_id": "doc-1",
+            "strategy": "structure_aware",
+            "start_position": 5,
+            "end_position": 15,
+        },
+        {
+            "chunk_id": "irrelevant",
+            "document_id": "doc-1",
+            "strategy": "structure_aware",
+            "start_position": 20,
+            "end_position": 30,
+        },
+    ]
+
+    candidates = build_qrel_candidates(questions, chunks)
+
+    assert [candidate["auto_grade"] for candidate in candidates] == [2, 1]
+    assert candidates[0]["relevance_grade"] == 2
+    assert candidates[1]["relevance_grade"] == ""
+    assert candidates[1]["evidence_coverage"] == 0.5
