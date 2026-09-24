@@ -13,6 +13,10 @@ Tinjau satu baris untuk setiap pasangan dokumen dan label pada
 `data/processed/exploration_20/pages.jsonl` sebagai sumber anotasi, bukan PDF,
 agar acuan sama dengan input detector.
 
+Jalankan `python scripts/prepare_structure_review_context.py` untuk membuat
+salinan baca yang menandai posisi setiap batas beserta teks sebelum dan
+sesudahnya. Tetap simpan keputusan review pada file CSV.
+
 Label yang ditinjau:
 
 - `kepala_putusan`: judul putusan sampai sebelum identitas terdakwa;

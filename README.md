@@ -124,6 +124,13 @@ Setelah lembar review diisi, hitung metrik batas struktur dengan:
 python scripts/score_structure_review.py
 ```
 
+Untuk membaca konteks sebelum dan sesudah setiap batas tanpa mencari offset
+secara manual, buat paket review dengan:
+
+```powershell
+python scripts/prepare_structure_review_context.py
+```
+
 Siapkan 80 slot pertanyaan pilot yang terstratifikasi dengan:
 
 ```powershell
