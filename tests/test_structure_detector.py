@@ -55,7 +55,7 @@ def test_detector_recognizes_numbered_identity_named_detention_and_spaced_verdic
         "kepala_putusan",
         "identitas_terdakwa",
         "riwayat_penahanan",
-        "pertimbangan_hukum",
+        "fakta",
         "amar_putusan",
         "penutup",
     ]
@@ -74,6 +74,68 @@ def test_detector_does_not_treat_incidental_legal_words_as_headings() -> None:
 
     assert [section.section_label for section in sections] == [
         "kepala_putusan",
-        "pertimbangan_hukum",
+        "fakta",
     ]
+
+
+def test_detector_uses_sac_top_down_rhetorical_boundaries() -> None:
+    text = (
+        "P U T U S A N\n"
+        "1. Nama lengkap\n: BUDI;\n"
+        "Terdakwa BUDI ditahan sejak tanggal 1 Januari;\n"
+        "Menimbang, bahwa Terdakwa diajukan ke persidangan berdasarkan dakwaan;\n"
+        "Menimbang, bahwa berdasarkan alat bukti diperoleh fakta-fakta hukum;\n"
+        "Menimbang, bahwa selanjutnya Majelis Hakim akan mempertimbangkan apakah "
+        "Terdakwa melakukan tindak pidana;\n"
+        "Menimbang, bahwa unsur setiap orang telah terpenuhi;\n"
+        "MENGADILI:\n"
+        "1. Menyatakan Terdakwa bersalah;\n"
+        "Demikianlah diputuskan dalam musyawarah Majelis Hakim."
+    )
+
+    sections = StructureDetector().detect("doc-sac", text)
+
+    assert [section.section_label for section in sections] == [
+        "kepala_putusan",
+        "identitas_terdakwa",
+        "riwayat_penahanan",
+        "fakta",
+        "pertimbangan_hukum",
+        "amar_putusan",
+        "penutup",
+    ]
+    assert sections[3].section_text.startswith("Menimbang, bahwa Terdakwa diajukan")
+    assert sections[4].section_text.startswith("Menimbang, bahwa selanjutnya")
+    assert "".join(section.section_text for section in sections) == text
+
+
+def test_detector_anchors_amar_in_document_tail() -> None:
+    text = (
+        "P U T U S A N\n"
+        "MENGADILI:\n"
+        + ("Uraian fakta yang panjang. " * 30)
+        + "\nMenimbang, bahwa selanjutnya Majelis Hakim akan mempertimbangkan apakah "
+        "Terdakwa bersalah;\n"
+        "M E N G A D I L I :\nTerdakwa dipidana."
+    )
+
+    sections = StructureDetector().detect("doc-tail", text)
+    amar = next(section for section in sections if section.section_label == "amar_putusan")
+
+    assert amar.section_text.startswith("M E N G A D I L I")
+
+
+def test_detector_recognizes_wrapped_closing_heading() -> None:
+    text = (
+        "P U T U S A N\n"
+        "Menimbang, bahwa selanjutnya Majelis Hakim akan mempertimbangkan apakah "
+        "Terdakwa bersalah;\n"
+        "MENGADILI:\nTerdakwa dipidana;\n"
+        "Demikian\ndiputuskan\ndalam musyawarah Majelis Hakim."
+    )
+
+    sections = StructureDetector().detect("doc-wrapped", text)
+
+    assert sections[-1].section_label == "penutup"
+    assert sections[-1].section_text.startswith("Demikian\ndiputuskan")
 

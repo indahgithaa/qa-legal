@@ -4,5 +4,6 @@ chunking:
   strategy: structure_aware
   max_words: 300
   overlap_words: 50
+  overlap_sentences: 2
   output_path: data/chunks/exploration_20/structure_aware/chunks.jsonl
 

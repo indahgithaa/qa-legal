@@ -20,6 +20,7 @@ preprocessing:
 
 structure_detection:
   fallback_label: unknown
+  conclusion_search_fraction: 0.20
 
 chunking:
   strategy: fixed_size

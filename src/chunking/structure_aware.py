@@ -2,15 +2,28 @@
 
 from __future__ import annotations
 
+import re
 from typing import Mapping, Sequence
 
 from .base import BaseChunker, Chunk
 
 
 class StructureAwareChunker(BaseChunker):
-    """Split long sections independently so chunks never cross sections."""
+    """Split sections with SAC-H+ sentence-aware overlap."""
 
     strategy = "structure_aware"
+
+    def __init__(
+        self,
+        *,
+        max_words: int = 300,
+        overlap_words: int = 50,
+        overlap_sentences: int = 2,
+    ) -> None:
+        super().__init__(max_words=max_words, overlap_words=overlap_words)
+        if overlap_sentences < 0:
+            raise ValueError("overlap_sentences must be greater than or equal to zero")
+        self.overlap_sentences = overlap_sentences
 
     def chunk(
         self,
@@ -36,7 +49,9 @@ class StructureAwareChunker(BaseChunker):
         for section in usable_sections:
             section_text = str(section.get("section_text", ""))
             section_start = int(section.get("start_position", 0))
-            for chunk_text, start, end in self._windows(section_text, offset=section_start):
+            for chunk_text, start, end in self._sentence_windows(
+                section_text, offset=section_start
+            ):
                 index = len(chunks)
                 chunks.append(
                     Chunk(
@@ -56,4 +71,68 @@ class StructureAwareChunker(BaseChunker):
                     )
                 )
         return chunks
+
+    def _sentence_windows(self, text: str, *, offset: int) -> list[tuple[str, int, int]]:
+        """Pack complete sentences and carry the previous two into the next chunk.
+
+        A sentence longer than the word budget falls back to the shared word
+        window implementation, preserving the configured word overlap.
+        """
+        sentences = self._sentence_spans(text)
+        if not sentences:
+            return []
+
+        counts = [len(re.findall(r"\S+", text[start:end])) for start, end in sentences]
+        windows: list[tuple[str, int, int]] = []
+        sentence_start = 0
+        while sentence_start < len(sentences):
+            if counts[sentence_start] > self.max_words:
+                start, end = sentences[sentence_start]
+                windows.extend(self._windows(text[start:end], offset=offset + start))
+                sentence_start += 1
+                continue
+
+            sentence_end = sentence_start
+            words = 0
+            while sentence_end < len(sentences):
+                candidate_words = counts[sentence_end]
+                if sentence_end > sentence_start and words + candidate_words > self.max_words:
+                    break
+                words += candidate_words
+                sentence_end += 1
+
+            char_start = sentences[sentence_start][0]
+            char_end = sentences[sentence_end - 1][1]
+            windows.append(
+                (text[char_start:char_end], offset + char_start, offset + char_end)
+            )
+            if sentence_end == len(sentences):
+                break
+
+            next_start = max(sentence_start + 1, sentence_end - self.overlap_sentences)
+            # Retain as much sentence overlap as fits while guaranteeing that
+            # the next window also contains unseen content.
+            while (
+                next_start < sentence_end
+                and sum(counts[next_start : sentence_end + 1]) > self.max_words
+            ):
+                next_start += 1
+            sentence_start = next_start
+
+        return windows
+
+    @staticmethod
+    def _sentence_spans(text: str) -> list[tuple[int, int]]:
+        boundaries = list(re.finditer(r"[.!?;]+(?=\s|$)", text))
+        spans: list[tuple[int, int]] = []
+        cursor = 0
+        for boundary in boundaries:
+            start_match = re.search(r"\S", text[cursor : boundary.end()])
+            if start_match:
+                spans.append((cursor + start_match.start(), boundary.end()))
+            cursor = boundary.end()
+        tail_match = re.search(r"\S", text[cursor:])
+        if tail_match:
+            spans.append((cursor + tail_match.start(), len(text.rstrip())))
+        return spans
 

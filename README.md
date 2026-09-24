@@ -24,12 +24,14 @@ PDF
   -> pembersihan teks
   -> deteksi struktur dokumen
   -> fixed-size / structure-aware chunking
+  -> audit struktur dan distribusi chunk
   -> JSONL
 ```
 
-Embedding, vector database, retrieval, generation, dan evaluasi belum
+Embedding, vector database, retrieval, generation, dan evaluasi retrieval belum
 diimplementasikan. File untuk komponen tersebut masih berupa placeholder agar
-batas antarbagian sistem sudah jelas sejak awal.
+batas antarbagian sistem sudah jelas sejak awal. Audit eksplorasi tersedia untuk
+memvalidasi keluaran chunking sebelum tahap tersebut dimulai.
 
 ## Struktur repository
 
@@ -101,6 +103,17 @@ python scripts/03_chunk.py --config configs/exploration_structure_aware.yaml
 Output disimpan pada subfolder `exploration_20` di setiap tahap. Sampel ini
 memaksimalkan variasi pengadilan dan tahun untuk eksplorasi format; sampel tidak
 dimaksudkan untuk mengestimasi distribusi statistik seluruh corpus.
+
+Audit hasil eksplorasi dan buat lembar review manual dengan:
+
+```powershell
+python scripts/audit_exploration.py
+```
+
+Perintah ini memeriksa coverage karakter dan offset, merangkum cakupan label,
+membandingkan distribusi kedua strategi, serta menulis laporan dan template
+review ke `experiments/results/`. Petunjuk anotasi dan kriteria penerimaan berada
+di `experiments/structure_validation_protocol.md`.
 
 ## Menjalankan pipeline
 
@@ -190,9 +203,23 @@ bagian dokumen dan digunakan sebagai baseline.
 
 ### Structure-aware
 
-Dokumen terlebih dahulu dibagi berdasarkan section yang terdeteksi. Section
-yang terlalu panjang kemudian dipotong menggunakan ukuran dan overlap yang sama
-dengan baseline. Dengan cara ini, satu chunk tidak melintasi batas dua section.
+Implementasi mengadaptasi *Structure-Aware Chunking* (SAC-H+) dari Sonowal dan
+Sadhu (2025) ke putusan pidana Indonesia. Detector bekerja secara top-down:
+
+1. menjangkar `amar_putusan` pada 20% terakhir dokumen;
+2. mencari transisi berpresisi tinggi dari fakta ke analisis hukum sebelum amar;
+3. memberi label narasi sebelumnya sebagai `fakta`; dan
+4. mempertahankan kepala putusan, identitas, penahanan, serta penutup sebagai
+   sub-struktur yang lebih rinci.
+
+Section yang terlalu panjang dipotong pada batas kalimat. Dua kalimat terakhir
+dari chunk sebelumnya dibawa ke chunk berikutnya untuk menjaga konteks lokal,
+sementara kalimat yang melebihi batas ukuran memakai word-window sebagai
+fallback. Satu chunk tidak pernah melintasi batas section.
+
+Rujukan metode: Himadri Sonowal dan Saisab Sadhu, 2025,
+[Structure-Aware Chunking for Abstractive Summarization of Long Legal
+Documents](https://aclanthology.org/2025.justnlp-main.19/).
 
 Kedua strategi mengimplementasikan interface `BaseChunker`. Parameter yang
 berpengaruh pada eksperimen berada di file YAML agar perbandingan dapat dilakukan
@@ -223,6 +250,9 @@ extraction:
 preprocessing:
   repair_mojibake: true
   remove_court_boilerplate: true
+
+structure_detection:
+  conclusion_search_fraction: 0.20
 ```
 
 Parameter chunking awal:
@@ -231,6 +261,7 @@ Parameter chunking awal:
 chunking:
   max_words: 300
   overlap_words: 50
+  overlap_sentences: 2  # khusus structure-aware; word overlap menjadi fallback
 ```
 
 Nilai ini masih merupakan konfigurasi awal, bukan hasil tuning.

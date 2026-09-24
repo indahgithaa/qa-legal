@@ -53,6 +53,35 @@ def test_structure_aware_falls_back_without_sections() -> None:
     assert chunks[0].section_label == "unknown"
 
 
+def test_structure_aware_uses_two_sentence_overlap() -> None:
+    text = "Satu dua tiga. Empat lima enam. Tujuh delapan sembilan. Sepuluh sebelas."
+    sections = [
+        {
+            "section_label": "fakta",
+            "section_heading": None,
+            "start_position": 0,
+            "end_position": len(text),
+            "section_text": text,
+        }
+    ]
+
+    chunks = StructureAwareChunker(
+        max_words=9,
+        overlap_words=1,
+        overlap_sentences=2,
+    ).chunk("doc", text, sections=sections)
+
+    assert [chunk.text for chunk in chunks] == [
+        "Satu dua tiga. Empat lima enam. Tujuh delapan sembilan.",
+        "Empat lima enam. Tujuh delapan sembilan. Sepuluh sebelas.",
+    ]
+
+
+def test_structure_aware_rejects_negative_sentence_overlap() -> None:
+    with pytest.raises(ValueError):
+        StructureAwareChunker(overlap_sentences=-1)
+
+
 def test_invalid_overlap_is_rejected() -> None:
     with pytest.raises(ValueError):
         FixedSizeChunker(max_words=5, overlap_words=5)

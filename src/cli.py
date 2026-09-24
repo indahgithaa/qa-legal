@@ -76,8 +76,12 @@ def preprocess_main(argv: Sequence[str] | None = None) -> None:
     processed_pages.sort(key=lambda page: (str(page["document_id"]), int(page["page_number"])))
     page_count = write_jsonl(pages_output, processed_pages)
 
+    structure_detection = config.get("structure_detection", {})
     detector = StructureDetector(
-        fallback_label=str(config.get("structure_detection", {}).get("fallback_label", "unknown"))
+        fallback_label=str(structure_detection.get("fallback_label", "unknown")),
+        conclusion_search_fraction=float(
+            structure_detection.get("conclusion_search_fraction", 0.20)
+        ),
     )
     sections: list[dict[str, object]] = []
     for document_id, document_pages in _group_pages(processed_pages).items():
@@ -119,7 +123,10 @@ def chunk_main(argv: Sequence[str] | None = None) -> None:
     if strategy == "fixed_size":
         chunker = FixedSizeChunker(**common_options)
     elif strategy == "structure_aware":
-        chunker = StructureAwareChunker(**common_options)
+        chunker = StructureAwareChunker(
+            **common_options,
+            overlap_sentences=int(chunking.get("overlap_sentences", 2)),
+        )
     else:
         raise ValueError(f"Unknown chunking strategy: {strategy}")
 
